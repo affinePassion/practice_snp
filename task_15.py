@@ -21,6 +21,7 @@ class BlockTranspositionCipher:
         return lower_key
     
     def _create_permutation(self):
+        # Сортируем буквы ключа по алфавиту, сохраняя исходные позиции
         sorted_chars = sorted((char, idx) for idx, char in enumerate(self.key))
         return [idx for char, idx in sorted_chars]
     
@@ -37,40 +38,33 @@ class BlockTranspositionCipher:
         if self.current_pos >= len(self.text):
             raise StopIteration
         
+        # Получаем блок и сохраняем позиции не-букв
         block = self.text[self.current_pos:self.current_pos + self.block_size]
-        block = block.ljust(self.block_size)
         self.current_pos += self.block_size
         
+        # Разделяем буквы и специальные символы
+        letters = []
+        special_chars = {}
+        for i, char in enumerate(block):
+            if char.isalpha():
+                letters.append(char.upper())  # Приводим к верхнему регистру
+            else:
+                special_chars[i] = char
+        
+        # Дополняем буквы до размера блока пробелами
+        letters.extend([' '] * (self.block_size - len(letters)))
+        
+        # Применяем перестановку только к буквам
         result = [''] * self.block_size
         for new_pos, old_pos in enumerate(self.permutation):
-            result[new_pos] = block[old_pos]
+            if old_pos < len(letters):
+                result[new_pos] = letters[old_pos]
+            else:
+                result[new_pos] = ' '
+        
+        # Восстанавливаем специальные символы на их места
+        for pos, char in special_chars.items():
+            if pos < len(result):
+                result[pos] = char
         
         return ''.join(result)
-
-try:
-    # Пример 1: Шифрование с явной итерацией по блокам
-    text = "HELLOWORLD"
-    key = "bAc"
-    print("Процесс шифрования по блокам:")
-    cipher = BlockTranspositionCipher(text, key)
-    for i, encrypted_block in enumerate(cipher, 1):
-        print(f"Блок {i}: '{encrypted_block}'")
-    
-    # Пример 2: Полное шифрование
-    cipher = BlockTranspositionCipher(text, key)
-    encrypted = ''.join(cipher)
-    print(f"\nПолный зашифрованный текст: '{encrypted}'")
-    
-    # Пример 3: Дешифрование с итерацией
-    print("\nПроцесс дешифрования по блокам:")
-    decipher = BlockTranspositionCipher(encrypted, key, decrypt=True)
-    for i, decrypted_block in enumerate(decipher, 1):
-        print(f"Блок {i}: '{decrypted_block}'")
-    
-    # Пример 4: Полное дешифрование с обрезкой пробелов
-    decipher = BlockTranspositionCipher(encrypted, key, decrypt=True)
-    decrypted = ''.join(decipher).rstrip()
-    print(f"\nПолный расшифрованный текст: '{decrypted}'")
-
-except ValueError as e:
-    print(f"Ошибка: {e}")
