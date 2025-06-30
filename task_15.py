@@ -21,7 +21,6 @@ class BlockTranspositionCipher:
         return lower_key
     
     def _create_permutation(self):
-        # Сортируем буквы ключа по алфавиту, сохраняя исходные позиции
         sorted_chars = sorted((char, idx) for idx, char in enumerate(self.key))
         return [idx for char, idx in sorted_chars]
     
@@ -38,33 +37,17 @@ class BlockTranspositionCipher:
         if self.current_pos >= len(self.text):
             raise StopIteration
         
-        # Получаем блок и сохраняем позиции не-букв
         block = self.text[self.current_pos:self.current_pos + self.block_size]
         self.current_pos += self.block_size
         
-        # Разделяем буквы и специальные символы
-        letters = []
-        special_chars = {}
-        for i, char in enumerate(block):
-            if char.isalpha():
-                letters.append(char.upper())  # Приводим к верхнему регистру
-            else:
-                special_chars[i] = char
+        if not self.decrypt and len(block) < self.block_size:
+            block = block.ljust(self.block_size)
         
-        # Дополняем буквы до размера блока пробелами
-        letters.extend([' '] * (self.block_size - len(letters)))
-        
-        # Применяем перестановку только к буквам
         result = [''] * self.block_size
         for new_pos, old_pos in enumerate(self.permutation):
-            if old_pos < len(letters):
-                result[new_pos] = letters[old_pos]
+            if old_pos < len(block):
+                result[new_pos] = block[old_pos]
             else:
                 result[new_pos] = ' '
-        
-        # Восстанавливаем специальные символы на их места
-        for pos, char in special_chars.items():
-            if pos < len(result):
-                result[pos] = char
         
         return ''.join(result)
